@@ -9,7 +9,7 @@ use warnings;
 use Log::ger;
 
 use IPC::System::Options 'system', -log=>1;
-use Sort::Util qw(uniq);
+use List::Util qw(uniqstr);
 
 our %SPEC;
 
@@ -27,7 +27,6 @@ $SPEC{host_struct} = {
         },
         type => {
             schema => 'str*',
-            default => 'a',
             cmdline_aliases => {t=>{}},
         },
         name => {
@@ -83,6 +82,7 @@ sub host_struct {
             for my $n (@res) {
                 system(
                     {capture_stdout => \$out, capture_stderr => \$err},
+                    "host", "-t", "a", $n,
                 );
                 log_warn "host: $err" if $err;
                 push @a, $1 while $out =~ / has address (.+)$/gm;
@@ -90,7 +90,7 @@ sub host_struct {
             @res = @a;
         }
 
-        return [200, "OK", [sort uniq @res]];
+        return [200, "OK", [sort {$a cmp $b} (uniqstr @res)]];
     } else {
         return [400, "Unknown action '$action'"];
     }
